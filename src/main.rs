@@ -9,81 +9,67 @@ use argparse::{
 
 static LOGGER: types::Logger = types::Logger;
 
-struct Args {
-    verbose: bool,
-    file: String,
-    sponge: Vec<String>,
-}
-
 fn main() {
     
     // init logger
     let _: Result<(), log::SetLoggerError> = log::set_logger(&LOGGER)
         .map(|()| log::set_max_level(log::LevelFilter::Info));
 
-    let mut args: Args = Args {
-        verbose: false,
-        file: String::new(),
-        sponge: Vec::new(),
-    };
-    let mut failed: bool = false;
-    let mut from_file: bool = true;
+    let mut verbose = false;
+    let mut file = String::new();
+    let mut sponge_v: Vec<String> = Vec::new();
+    let mut failed = false;
     let mut err: i32 = 0;
 
-    // limit argparse scope
-    {
+    { // limit argparse scope
         let mut ap = ArgumentParser::new();
         ap.set_description("Generates sPoNgEbOB text.");
-        ap.refer(&mut args.verbose)
+        ap.refer(&mut verbose)
             .add_option(&["-v", "--verbose"], StoreTrue, "Log output");
-        ap.refer(&mut args.file)
+        ap.refer(&mut file)
             .add_option(&["-f", "--file"], Store, "Sponge an entire file");
-        ap.refer(&mut args.sponge)
+        ap.refer(&mut sponge_v)
             .add_argument("string", Collect, "String to be sponged (ignored if file provided");
         match ap.parse_args() {
-            Ok(()) => {}
             Err(x) => {
                 failed = true;
                 err = x;
             }
+            _ => { }
         }
     }
 
     // collect posargs
     let mut sponge: String = String::new();
-    for s in args.sponge.into_iter() {
+    for s in sponge_v.into_iter() {
         sponge.push_str(&s);
         sponge.push(' ');
     }
+    let sponge = String::from(sponge.trim());
 
     // check if failed
     if failed {
-        warn!("argument parser failed with");
-        warn!("verbose: {}", args.verbose);
-        warn!("file:    {}", args.file);
+        warn!("Argument parser failed with");
+        warn!("verbose: {}", verbose);
+        warn!("file:    {}", file);
         warn!("sponge:  {}", sponge);
         std::process::exit(err);
+    } else if sponge.len() == 0 {
+        warn!("Please provide the text to be sponged.");
+        std::process::exit(3);
     }
 
-    // log
-    if args.verbose {
-        info!("verbose: {}", args.verbose);
-        info!("file:    {}", args.file);
+    if verbose {
+        info!("verbose: {}", verbose);
+        info!("file:    {}", file);
         info!("sponge:  {}", sponge);
     }
 
     // try to open file
-    let mut content: String = std::fs::read_to_string(&args.file)
-        .map_or_else(
-            |_| {
-                from_file = false;
-                String::from("unavailable")
-            },
-            |t| { t }
-        );
-    if !from_file {
-        content = sponge;
-    }
+    let content = match std::fs::read_to_string(&file).ok() {
+        None => { sponge }
+        Some(x) => { x }
+    };
 
     // begin sponging
     let mut sm = types::StateMachine::new();

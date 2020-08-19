@@ -6,10 +6,9 @@ pub const EXCEPTIONS: [char; 11] = [
     'C', 'I', 'l', 'K', 'o', 'S',
     'u', 'V', 'W', 'X', 'Z'];
 
-pub const INV_EXCPTIONS: [char; 11] = [
-    'c', 'i', 'L', 'k', 'O', 's',
-    'U', 'v', 'w', 'x', 'z'];
-
+// the sponging is DETERMINISTIC!
+// now you can finally enjoy
+// DETERMINISTIC SPONGEBOB
 pub struct StateMachine {
     pub consec_up: u8,
     pub consec_down: u8, 
